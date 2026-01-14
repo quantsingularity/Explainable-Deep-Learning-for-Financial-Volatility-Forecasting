@@ -4,7 +4,6 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![TensorFlow 2.14](https://img.shields.io/badge/TensorFlow-2.14-orange.svg)](https://www.tensorflow.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
 
@@ -93,7 +92,7 @@ This repository contains the complete implementation of the research paper **"Ex
 
 ```bash
 # Clone the repository
-git clone https://github.com/abrar2030/Explainable-Deep-Learning-for-Financial-Volatility-Forecasting.git
+git clone https://github.com/quantsingularity/Explainable-Deep-Learning-for-Financial-Volatility-Forecasting
 cd Explainable-Deep-Learning-for-Financial-Volatility-Forecasting
 
 # Create virtual environment (recommended)
