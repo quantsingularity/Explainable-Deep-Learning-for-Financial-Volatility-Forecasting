@@ -1,0 +1,232 @@
+version: "3.8"
+
+services:
+  # PostgreSQL for MLflow tracking
+  postgres:
+    image: postgres:15-alpine
+    container_name: volatility-postgres
+    environment:
+      POSTGRES_USER: mlflow
+      POSTGRES_PASSWORD: mlflow_password
+      POSTGRES_DB: mlflow_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mlflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - volatility-network
+
+  # MLflow Tracking Server
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.9.2
+    container_name: volatility-mlflow
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MLFLOW_BACKEND_STORE_URI: postgresql://mlflow:mlflow_password@postgres:5432/mlflow_db
+      MLFLOW_ARTIFACT_ROOT: /mlflow/artifacts
+      MLFLOW_SERVE_ARTIFACTS: "true"
+    volumes:
+      - mlflow_artifacts:/mlflow/artifacts
+    ports:
+      - "5000:5000"
+    command: >
+      mlflow server
+      --backend-store-uri postgresql://mlflow:mlflow_password@postgres:5432/mlflow_db
+      --default-artifact-root /mlflow/artifacts
+      --host 0.0.0.0
+      --port 5000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - volatility-network
+
+  # Training Service (CPU)
+  training-cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: training
+      args:
+        VARIANT: ""
+    container_name: volatility-training-cpu
+    profiles: ["training-cpu"]
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      TF_FORCE_GPU_ALLOW_GROWTH: "true"
+      PYTHONPATH: /app
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./figures:/app/figures
+      - ./tables:/app/tables
+      - ./logs:/app/logs
+      - ./config.ini:/app/config.ini
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    networks:
+      - volatility-network
+
+  # Training Service (GPU)
+  training-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: training
+      args:
+        VARIANT: "-gpu"
+    container_name: volatility-training-gpu
+    profiles: ["training-gpu"]
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      TF_FORCE_GPU_ALLOW_GROWTH: "true"
+      NVIDIA_VISIBLE_DEVICES: all
+      PYTHONPATH: /app
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./figures:/app/figures
+      - ./tables:/app/tables
+      - ./logs:/app/logs
+      - ./config.ini:/app/config.ini
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - volatility-network
+
+  # FastAPI Inference Server
+  api-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+      args:
+        VARIANT: ""
+    container_name: volatility-api
+    profiles: ["api"]
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MODEL_PATH: /app/models
+      REDIS_URL: redis://redis:6379
+      PYTHONPATH: /app
+    volumes:
+      - ./models:/app/models:ro
+      - ./data:/app/data:ro
+      - ./logs:/app/logs
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mlflow
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - volatility-network
+
+  # Redis for caching inference results
+  redis:
+    image: redis:7-alpine
+    container_name: volatility-redis
+    profiles: ["api"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - volatility-network
+
+  # Prometheus for monitoring
+  prometheus:
+    image: prom/prometheus:v2.48.1
+    container_name: volatility-prometheus
+    profiles: ["monitoring"]
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    networks:
+      - volatility-network
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: volatility-grafana
+    profiles: ["monitoring"]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - volatility-network
+
+  # Jupyter Notebook for development
+  notebook:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: volatility-notebook
+    profiles: ["development"]
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      JUPYTER_ENABLE_LAB: "yes"
+      PYTHONPATH: /app
+    volumes:
+      - .:/app
+      - jupyter_data:/root/.jupyter
+    ports:
+      - "8888:8888"
+      - "6006:6006" # TensorBoard
+    depends_on:
+      - mlflow
+    networks:
+      - volatility-network
+
+volumes:
+  postgres_data:
+  mlflow_artifacts:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  jupyter_data:
+
+networks:
+  volatility-network:
+    driver: bridge
