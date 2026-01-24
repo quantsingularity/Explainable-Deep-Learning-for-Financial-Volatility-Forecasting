@@ -1,4 +1,4 @@
-# Explainable Deep Learning for Financial Volatility Forecasting: LSTM-Attention-SHAP Framework
+# Explainable Deep Learning for Financial Volatility Forecasting
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](requirements.txt)
 [![TensorFlow/Keras](https://img.shields.io/badge/TensorFlow-2.0+-red.svg)](requirements.txt)
