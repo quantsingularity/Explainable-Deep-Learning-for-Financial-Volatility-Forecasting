@@ -30,7 +30,7 @@ plt.rcParams.update(
 )
 
 
-def save_fig(fig, name, save_path="../figures"):
+def save_fig(fig, name, save_path="../docs/figures"):
     """Save figure with high quality."""
     os.makedirs(save_path, exist_ok=True)
     filepath = os.path.join(save_path, f"{name}.png")
@@ -39,7 +39,7 @@ def save_fig(fig, name, save_path="../figures"):
     print(f"  ✓ Saved: {filepath}")
 
 
-def fig1_lstm_attention_architecture(save_path="../figures"):
+def fig1_lstm_attention_architecture(save_path="../docs/figures"):
     """
     Figure 1: Detailed LSTM-Attention Model Architecture Diagram.
     Shows the complete flow from input through LSTM layers, attention, and outputs.
@@ -248,7 +248,7 @@ def fig1_lstm_attention_architecture(save_path="../figures"):
     save_fig(fig, "figure1_model_architecture", save_path)
 
 
-def fig2_training_validation_loss(history=None, save_path="../figures"):
+def fig2_training_validation_loss(history=None, save_path="../docs/figures"):
     """
     Figure 2: Training and Validation Loss Curves.
     Shows convergence behavior during training.
@@ -304,7 +304,7 @@ def fig2_training_validation_loss(history=None, save_path="../figures"):
 
 
 def fig3_forecast_comparison(
-    dates=None, actual=None, forecast=None, save_path="../figures"
+    dates=None, actual=None, forecast=None, save_path="../docs/figures"
 ):
     """
     Figure 3: Actual vs. Forecasted Volatility Time Series.
@@ -376,7 +376,7 @@ def fig3_forecast_comparison(
     save_fig(fig, "figure3_forecast_comparison", save_path)
 
 
-def fig4_shap_importance_bar(importance_df=None, save_path="../figures"):
+def fig4_shap_importance_bar(importance_df=None, save_path="../docs/figures"):
     """
     Figure 4: SHAP Feature Importance Bar Plot.
     """
@@ -457,7 +457,7 @@ def fig4_shap_importance_bar(importance_df=None, save_path="../figures"):
     save_fig(fig, "figure4_shap_importance", save_path)
 
 
-def fig5_shap_beeswarm(save_path="../figures"):
+def fig5_shap_beeswarm(save_path="../docs/figures"):
     """
     Figure 5: SHAP Beeswarm Plot showing feature value impact.
     """
@@ -515,7 +515,7 @@ def fig5_shap_beeswarm(save_path="../figures"):
     save_fig(fig, "figure5_shap_beeswarm", save_path)
 
 
-def fig6_attention_heatmap(attention_weights=None, save_path="../figures"):
+def fig6_attention_heatmap(attention_weights=None, save_path="../docs/figures"):
     """
     Figure 6: Attention Mechanism Temporal Focus Heatmap.
     """
@@ -568,7 +568,7 @@ def fig7_var_backtesting(
     returns=None,
     var_threshold=None,
     violations=None,
-    save_path="../figures",
+    save_path="../docs/figures",
 ):
     """
     Figure 7: Value at Risk (99%) Backtesting with Violation Indicators.
@@ -649,7 +649,7 @@ def fig7_var_backtesting(
     save_fig(fig, "figure7_var_backtesting", save_path)
 
 
-def fig8_model_comparison(comparison_df=None, save_path="../figures"):
+def fig8_model_comparison(comparison_df=None, save_path="../docs/figures"):
     """
     Figure 8: Comparative Model Performance (RMSE Comparison).
     """
@@ -724,7 +724,7 @@ def fig8_model_comparison(comparison_df=None, save_path="../figures"):
     save_fig(fig, "figure8_model_comparison", save_path)
 
 
-def generate_all_figures(save_path="../figures"):
+def generate_all_figures(save_path="../docs/figures"):
     """Generate all paper figures."""
     print(f"\n{'='*70}")
     print("GENERATING ALL RESEARCH PAPER FIGURES")

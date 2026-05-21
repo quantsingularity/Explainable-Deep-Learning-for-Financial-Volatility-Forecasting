@@ -2,21 +2,27 @@
 Comprehensive Test Suite for Production Enhancements
 """
 
-from code.ablation_study import LSTMAttentionModel, LSTMOnlyModel
-from code.streaming_inference import MarketDataPoint, StreamingDataBuffer
-from code.trading_backtest import (
-    BacktestConfig,
-    BacktestEngine,
-    VolatilityArbitrageStrategy,
-)
+import os
+import sys
 
-# Import modules to test
-from code.train_multi_horizon import MultiHorizonVolatilityModel
+# Add the parent code/ directory to the path so modules can be imported directly
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from datetime import datetime
 
 import numpy as np
 import pandas as pd
 import pytest
+from evaluation.ablation_study import LSTMAttentionModel, LSTMOnlyModel
+from evaluation.trading_backtest import (
+    BacktestConfig,
+    BacktestEngine,
+    VolatilityArbitrageStrategy,
+)
+from serving.streaming_inference import MarketDataPoint, StreamingDataBuffer
+
+# Import modules to test
+from training.train_multi_horizon import MultiHorizonVolatilityModel
 
 
 class TestMultiHorizonForecasting:

@@ -177,7 +177,7 @@ if __name__ == "__main__":
     # Generate synthetic dataset
     df = generate_synthetic_dataset(n_days=1827, start_date="2018-01-01")
 
-    save_dataset(df, "../data/synthetic_data.csv")
+    save_dataset(df, "./data/synthetic_data.csv")
 
     # Print statistics
     print("\n=== Dataset Statistics ===")

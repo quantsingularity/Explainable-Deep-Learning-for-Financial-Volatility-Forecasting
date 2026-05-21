@@ -328,7 +328,7 @@ if __name__ == "__main__":
     )
 
     # Save to CSV
-    output_path = "../data/real_data_SPY.csv"
+    output_path = "./data/real_data_SPY.csv"
     df_spy.to_csv(output_path, index=False)
     print(f"\n{'='*70}")
     print(f"✓ Dataset saved to: {output_path}")
@@ -337,4 +337,4 @@ if __name__ == "__main__":
     # Optionally download multi-asset data
     # datasets = download_multiple_assets()
     # for ticker, df in datasets.items():
-    #     df.to_csv(f'../data/real_data_{ticker}.csv', index=False)
+    #     df.to_csv(f'./data/real_data_{ticker}.csv', index=False)

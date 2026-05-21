@@ -1,217 +1,114 @@
 #!/bin/bash
 
 # Complete Pipeline Execution Script
-# Runs all components of the LSTM-Attention-SHAP volatility forecasting system
+# Run from the project root directory
 
 echo "======================================================================"
 echo "  LSTM-ATTENTION-SHAP VOLATILITY FORECASTING - COMPLETE PIPELINE"
 echo "======================================================================"
-echo ""
 
-# Check if running from project root
+# Must be run from project root
 if [ ! -d "code" ]; then
-    echo "❌ Error: Please run this script from the project root directory"
-    echo "   Current directory: $(pwd)"
+    echo "Error: run this script from the project root directory"
     exit 1
 fi
 
-# Create necessary directories
-echo "📁 Creating directories..."
-mkdir -p data models figures tables tests/logs
+mkdir -p models docs/figures docs/tables logs
 
-# Navigate to code directory
+# All Python commands run from inside code/ so relative paths resolve correctly
 cd code || exit 1
 
 echo ""
 echo "======================================================================"
 echo "STEP 1/6: DATA PREPARATION"
 echo "======================================================================"
-echo ""
 
-# Check if data exists
-if [ -f "../data/synthetic_data.csv" ]; then
-    echo "✓ Synthetic data already exists. Skipping generation..."
+if [ -f "./data/synthetic_data.csv" ]; then
+    echo "Synthetic data already exists — skipping generation"
 else
     echo "Generating synthetic financial data..."
-    python data_generator.py
-    if [ $? -ne 0 ]; then
-        echo "❌ Data generation failed!"
-        exit 1
-    fi
+    python -m data_processing.data_generator || { echo "Data generation failed"; exit 1; }
 fi
-
-echo ""
-echo "💡 Optional: Download real market data"
-echo "   Uncomment the following line in this script to use real data:"
-echo "   # python download_real_data.py"
-echo ""
-# Uncomment to download real data:
-# python download_real_data.py
 
 echo ""
 echo "======================================================================"
 echo "STEP 2/6: MODEL TRAINING"
 echo "======================================================================"
-echo ""
+echo "Expected time: 15-30 min (CPU) / 5 min (GPU)"
 
-echo "Training LSTM-Attention model..."
-echo "⏱️  Expected time: 15-30 minutes (CPU) / 5 minutes (GPU)"
-echo ""
-
-python main_pipeline.py
-if [ $? -ne 0 ]; then
-    echo "❌ Pipeline execution failed!"
-    exit 1
-fi
+python main_pipeline.py || { echo "Pipeline execution failed"; exit 1; }
 
 echo ""
 echo "======================================================================"
-echo "STEP 3/6: BASELINE MODEL COMPARISON"
+echo "STEP 3/6: BASELINE COMPARISON"
 echo "======================================================================"
-echo ""
 
-echo "Running baseline models (GARCH, EGARCH, HAR-RV)..."
-echo ""
-
-# Create baseline comparison script
-cat > run_baselines.py << 'EOF'
+python - << 'PYEOF'
 import sys
-sys.path.append('.')
-from baseline_models import compare_baseline_models
-from utils import load_and_prepare_data
-import pandas as pd
-import numpy as np
+sys.path.insert(0, ".")
+from data_processing.data_generator import generate_synthetic_dataset
+from evaluation.baseline_models import compare_baseline_models
+from core.utils import load_and_prepare_data
+import pandas as pd, os
 
-# Load data
-df, feature_cols = load_and_prepare_data('../data/synthetic_data.csv')
-
-# Extract returns and realized volatility
-returns = df['returns'].values
-rv_actual = df['realized_volatility'].values
-
-# Run comparison
-results, actual = compare_baseline_models(returns, rv_actual, train_ratio=0.7)
-
-# Save results
-baseline_results = pd.DataFrame(results)
-baseline_results['Actual'] = actual
-baseline_results.to_csv('../tables/baseline_forecasts.csv', index=False)
-
-print("\n✓ Baseline models comparison completed")
-print(f"  Results saved to: ../tables/baseline_forecasts.csv")
-EOF
-
-python run_baselines.py
-if [ $? -ne 0 ]; then
-    echo "⚠️  Baseline models failed, but continuing..."
-fi
-
-rm run_baselines.py
+df, _ = load_and_prepare_data("./data/synthetic_data.csv")
+results, actual = compare_baseline_models(df["returns"].values, df["realized_volatility"].values, train_ratio=0.7)
+out = pd.DataFrame(results)
+out["Actual"] = actual
+os.makedirs("../docs/tables", exist_ok=True)
+out.to_csv("../docs/tables/baseline_forecasts.csv", index=False)
+print("Baseline comparison saved to docs/tables/baseline_forecasts.csv")
+PYEOF
 
 echo ""
 echo "======================================================================"
 echo "STEP 4/6: FIGURE GENERATION"
 echo "======================================================================"
-echo ""
 
-echo "Generating all publication-quality figures..."
-python generate_paper_figures.py
-if [ $? -ne 0 ]; then
-    echo "⚠️  Figure generation failed, but continuing..."
-fi
+python -m visualization.generate_paper_figures || echo "Figure generation failed — continuing"
 
 echo ""
 echo "======================================================================"
-echo "STEP 5/6: VALIDATION & TESTING"
+echo "STEP 5/6: TESTS"
 echo "======================================================================"
-echo ""
 
-cd ../tests || exit 1
-echo "Running smoke tests..."
-python test_smoke.py
-if [ $? -ne 0 ]; then
-    echo "⚠️  Some tests failed, but pipeline completed"
-fi
-
-cd ../code || exit 1
+python -m pytest tests/test_smoke.py -v || echo "Some tests failed — continuing"
 
 echo ""
 echo "======================================================================"
-echo "STEP 6/6: SUMMARY & RESULTS"
+echo "STEP 6/6: SUMMARY"
 echo "======================================================================"
-echo ""
 
-# Create summary script
-cat > generate_summary.py << 'EOF'
-import os
-import glob
+python - << 'PYEOF'
+import os, glob
 
-print("\n📊 PIPELINE EXECUTION SUMMARY")
-print("="*70)
+sections = {
+    "Data files":    glob.glob("./data/*.csv"),
+    "Trained models": glob.glob("../models/*.keras"),
+    "Figures":       glob.glob("../docs/figures/*.png"),
+    "Tables":        glob.glob("../docs/tables/*.csv"),
+}
 
-# Check generated files
-data_files = glob.glob('../data/*.csv')
-model_files = glob.glob('../models/*.h5')
-figure_files = glob.glob('../figures/*.png')
-table_files = glob.glob('../tables/*.csv')
+print("\nPIPELINE EXECUTION SUMMARY")
+print("=" * 60)
+for label, files in sections.items():
+    print(f"\n{label}: {len(files)}")
+    for f in sorted(files):
+        size = os.path.getsize(f) / (1024 * 1024)
+        print(f"  - {os.path.basename(f)} ({size:.2f} MB)")
 
-print(f"\n✓ Data Files: {len(data_files)}")
-for f in data_files:
-    size_mb = os.path.getsize(f) / (1024*1024)
-    print(f"  - {os.path.basename(f)} ({size_mb:.2f} MB)")
-
-print(f"\n✓ Trained Models: {len(model_files)}")
-for f in model_files:
-    size_mb = os.path.getsize(f) / (1024*1024)
-    print(f"  - {os.path.basename(f)} ({size_mb:.2f} MB)")
-
-print(f"\n✓ Generated Figures: {len(figure_files)}")
-for f in sorted(figure_files):
-    print(f"  - {os.path.basename(f)}")
-
-print(f"\n✓ Result Tables: {len(table_files)}")
-for f in sorted(table_files):
-    print(f"  - {os.path.basename(f)}")
-
-print("\n" + "="*70)
-print("✓ PIPELINE COMPLETED SUCCESSFULLY!")
-print("="*70)
-
-print("\n📂 Output Locations:")
+print("\n" + "=" * 60)
+print("PIPELINE COMPLETED SUCCESSFULLY")
+print("=" * 60)
+print("\nOutput locations:")
 print(f"  Models:  {os.path.abspath('../models')}")
-print(f"  Figures: {os.path.abspath('../figures')}")
-print(f"  Tables:  {os.path.abspath('../tables')}")
+print(f"  Figures: {os.path.abspath('../docs/figures')}")
+print(f"  Tables:  {os.path.abspath('../docs/tables')}")
+print("\nNext steps:")
+print("  1. Review docs/figures/ for visualisations")
+print("  2. Check docs/tables/ for performance metrics")
+print("  3. See README.md or docs/USER_GUIDE.md for full usage")
+PYEOF
 
-print("\n💡 Next Steps:")
-print("  1. Review figures in the 'figures/' directory")
-print("  2. Check model performance in 'tables/' CSV files")
-print("  3. Load trained model from 'models/lstm_attention_model.h5'")
-print("  4. Explore SHAP interpretability results")
-
-print("\n📚 Documentation:")
-print("  - README.md: Complete usage guide")
-print("  - Research Paper: See attached DOCX file")
-print("  - Code Documentation: Inline comments in all .py files")
-print("")
-EOF
-
-python generate_summary.py
-rm generate_summary.py
-
-# Return to project root
-cd .. || exit 1
-
-echo ""
-echo "======================================================================"
-echo "✨ ALL PIPELINE STEPS COMPLETED"
-echo "======================================================================"
-echo ""
-echo "🎉 Success! The complete pipeline has been executed."
-echo ""
-echo "📊 Key Results:"
-echo "   - Trained model: models/lstm_attention_model.h5"
-echo "   - Figures: figures/ (8 PNG files)"
-echo "   - Tables: tables/ (CSV files with metrics)"
-echo ""
-echo "📖 For detailed usage, see README.md"
+cd ..
 echo ""

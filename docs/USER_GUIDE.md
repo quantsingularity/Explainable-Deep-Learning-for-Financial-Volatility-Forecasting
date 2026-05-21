@@ -36,7 +36,7 @@
 ```bash
 # Clone repository
 git clone <repository-url>
-cd volatility-forecasting-enhanced
+cd volatility-forecasting
 
 # Run automated setup
 ./setup.sh

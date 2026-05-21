@@ -10,8 +10,15 @@ from typing import Dict, Tuple
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import tensorflow_model_optimization as tfmot
-from model import build_lstm_attention_model, compile_model
+
+try:
+    import tensorflow_model_optimization as tfmot
+
+    _TFMOT_AVAILABLE = True
+except ImportError:
+    tfmot = None  # type: ignore
+    _TFMOT_AVAILABLE = False
+from core.model import build_lstm_attention_model, compile_model
 from tensorflow import keras
 
 # Set seeds
@@ -147,6 +154,11 @@ class ModelPruner:
         pruned_model : keras.Model
             Model with pruning applied
         """
+        if not _TFMOT_AVAILABLE:
+            raise ImportError(
+                "tensorflow-model-optimization is required for pruning. "
+                "Install it with: pip install tensorflow-model-optimization"
+            )
 
         print("\n" + "=" * 80)
         print("MODEL PRUNING")
@@ -423,7 +435,7 @@ class KnowledgeDistiller:
         return student_model, history.history
 
 
-def compare_optimization_methods(results: Dict, save_path: str = "../tables"):
+def compare_optimization_methods(results: Dict, save_path: str = "../docs/tables"):
     """
     Compare different optimization methods
 

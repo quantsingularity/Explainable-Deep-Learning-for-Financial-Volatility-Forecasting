@@ -201,10 +201,6 @@ class StreamingInferencePipeline:
         self.latency_history = deque(maxlen=1000)
         self.prediction_count = 0
 
-        # Batching for efficiency
-        self.pending_predictions: Dict[str, asyncio.Future] = {}
-        self.batch_lock = asyncio.Lock()
-
         logger.info("StreamingInferencePipeline initialized")
         logger.info(f"Model loaded from: {model_path}")
         logger.info("Target latency: <100ms")
@@ -212,7 +208,7 @@ class StreamingInferencePipeline:
     def _load_model(self) -> tf.keras.Model:
         """Load trained model with custom objects"""
 
-        from model import AttentionLayer
+        from core.model import AttentionLayer
 
         custom_objects = {"AttentionLayer": AttentionLayer}
 

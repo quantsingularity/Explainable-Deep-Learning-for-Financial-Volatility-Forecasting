@@ -4,10 +4,12 @@ Provides REST API for model serving with <100ms latency target
 """
 
 import asyncio
+import hashlib
 import json
 import logging
 import os
 import time
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -23,22 +25,6 @@ from pydantic import BaseModel, Field
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Initialize FastAPI app
-app = FastAPI(
-    title="Volatility Forecasting API",
-    description="Production-grade API for multi-horizon volatility forecasting",
-    version="1.0.0",
-)
-
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Prometheus metrics
 REQUEST_COUNT = Counter(
@@ -132,7 +118,7 @@ def load_model(model_path: str = "/app/models/lstm_attention_model.keras"):
     try:
         logger.info(f"Loading model from {model_path}")
 
-        from model import AttentionLayer
+        from core.model import AttentionLayer
 
         custom_objects = {"AttentionLayer": AttentionLayer}
         model = tf.keras.models.load_model(model_path, custom_objects=custom_objects)
@@ -164,12 +150,31 @@ def init_redis():
         redis_client = None
 
 
-@app.on_event("startup")
-async def startup_event():
-    """Initialize on startup"""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application startup and shutdown lifecycle."""
     model_path = os.getenv("MODEL_PATH", "/app/models/lstm_attention_model.keras")
     load_model(model_path)
     init_redis()
+    yield
+
+
+# Initialize FastAPI app (lifespan replaces the deprecated @app.on_event pattern)
+app = FastAPI(
+    title="Volatility Forecasting API",
+    description="Production-grade API for multi-horizon volatility forecasting",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -191,9 +196,10 @@ async def metrics():
 
 
 def get_cache_key(request: VolatilityRequest) -> str:
-    """Generate cache key for request"""
-    features_hash = hash(tuple(map(tuple, request.features)))
-    return f"volatility:{request.asset_id}:{request.horizon}:{features_hash}"
+    """Generate a stable, process-safe cache key for a request."""
+    features_str = json.dumps(request.features, separators=(",", ":"))
+    digest = hashlib.sha256(features_str.encode()).hexdigest()[:16]
+    return f"volatility:{request.asset_id}:{request.horizon}:{digest}"
 
 
 async def get_cached_prediction(cache_key: str) -> Optional[Dict]:
@@ -258,12 +264,8 @@ async def predict_volatility(request: VolatilityRequest):
                 detail=f"Features must be 2D array, got shape {features_array.shape}",
             )
 
-        # Reshape to (batch_size, time_steps, features)
-        if features_array.shape[0] == 1:
-            # Already in correct format
-            model_input = features_array.reshape(1, *features_array.shape)
-        else:
-            model_input = features_array.reshape(1, *features_array.shape)
+        # Reshape to (batch_size=1, time_steps, features)
+        model_input = features_array.reshape(1, *features_array.shape)
 
         # Inference
         inference_start = time.time()
@@ -388,5 +390,5 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
 
     uvicorn.run(
-        "api_server:app", host="0.0.0.0", port=port, workers=4, log_level="info"
+        "serving.api_server:app", host="0.0.0.0", port=port, workers=4, log_level="info"
     )

@@ -4,17 +4,17 @@ Extends the base model to predict 1-day, 5-day, and 22-day ahead volatility.
 """
 
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import mlflow
-import mlflow.keras
+import mlflow.tensorflow
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from model import AttentionLayer, pinball_loss
+from core.model import AttentionLayer, pinball_loss
+from core.utils import load_and_prepare_data, train_val_test_split
 from tensorflow import keras
 from tensorflow.keras import Model, layers
-from utils import load_and_prepare_data, train_val_test_split
 
 # Set seeds
 np.random.seed(123)
@@ -30,8 +30,8 @@ class MultiHorizonVolatilityModel:
     def __init__(
         self,
         input_shape: Tuple[int, int],
-        horizons: List[int] = [1, 5, 22],
-        lstm_units: List[int] = [128, 64],
+        horizons: Optional[List[int]] = None,
+        lstm_units: Optional[List[int]] = None,
         attention_units: int = 64,
         dense_units: int = 32,
         dropout: float = 0.2,
@@ -45,9 +45,9 @@ class MultiHorizonVolatilityModel:
         input_shape : tuple
             Input shape (time_steps, n_features)
         horizons : list
-            Forecast horizons in days [1, 5, 22]
+            Forecast horizons in days (default: [1, 5, 22])
         lstm_units : list
-            LSTM layer units
+            LSTM layer units (default: [128, 64])
         attention_units : int
             Attention mechanism units
         dense_units : int
@@ -58,8 +58,8 @@ class MultiHorizonVolatilityModel:
             Recurrent dropout rate
         """
         self.input_shape = input_shape
-        self.horizons = horizons
-        self.lstm_units = lstm_units
+        self.horizons = horizons if horizons is not None else [1, 5, 22]
+        self.lstm_units = lstm_units if lstm_units is not None else [128, 64]
         self.attention_units = attention_units
         self.dense_units = dense_units
         self.dropout = dropout
@@ -150,9 +150,9 @@ class MultiHorizonVolatilityModel:
             )  # Weight by inverse of horizon
             metrics[f"volatility_h{horizon}"] = ["mae", "mse"]
 
-            # VaR losses (Pinball)
-            losses[f"var_h{horizon}"] = lambda y_true, y_pred: pinball_loss(
-                y_true, y_pred, tau=0.01
+            # VaR losses (Pinball) — use default-arg capture to avoid closure over loop var
+            losses[f"var_h{horizon}"] = lambda y_true, y_pred, tau=0.01: pinball_loss(
+                y_true, y_pred, tau=tau
             )
             loss_weights[f"var_h{horizon}"] = 0.3 / horizon
             metrics[f"var_h{horizon}"] = ["mae"]
@@ -204,7 +204,7 @@ class MultiHorizonVolatilityModel:
 
 def train_multi_horizon_model(
     data_dict: Dict,
-    horizons: List[int] = [1, 5, 22],
+    horizons: Optional[List[int]] = None,
     epochs: int = 100,
     batch_size: int = 64,
     save_path: str = "../models",
@@ -218,7 +218,7 @@ def train_multi_horizon_model(
     data_dict : dict
         Dictionary with train/val/test data
     horizons : list
-        Forecast horizons
+        Forecast horizons (default: [1, 5, 22])
     epochs : int
         Training epochs
     batch_size : int
@@ -239,6 +239,10 @@ def train_multi_horizon_model(
     print("\n" + "=" * 80)
     print("TRAINING MULTI-HORIZON VOLATILITY FORECASTING MODEL")
     print("=" * 80)
+
+    if horizons is None:
+        horizons = [1, 5, 22]
+
     print(f"Horizons: {horizons}")
     print(f"Training samples: {len(data_dict['train']['X'])}")
     print(f"Validation samples: {len(data_dict['val']['X'])}")
@@ -293,7 +297,8 @@ def train_multi_horizon_model(
     ]
 
     if use_mlflow:
-        callbacks.append(mlflow.keras.MlflowCallback())
+        # Enable TensorFlow/Keras autologging (logs metrics, params, and the model)
+        mlflow.tensorflow.autolog(log_models=False)
 
     # Train model
     print("\nStarting training...")
@@ -409,7 +414,7 @@ def evaluate_multi_horizon_performance(
 if __name__ == "__main__":
     # Load data
     print("Loading data...")
-    df, feature_cols = load_and_prepare_data("../data/synthetic_data.csv")
+    df, feature_cols = load_and_prepare_data("./data/synthetic_data.csv")
 
     # Split data
     data_dict = train_val_test_split(
@@ -441,6 +446,6 @@ if __name__ == "__main__":
     )
 
     # Save results
-    os.makedirs("../tables", exist_ok=True)
-    results_df.to_csv("../tables/multi_horizon_performance.csv", index=False)
-    print("\nResults saved to: ../tables/multi_horizon_performance.csv")
+    os.makedirs("../docs/tables", exist_ok=True)
+    results_df.to_csv("../docs/tables/multi_horizon_performance.csv", index=False)
+    print("\nResults saved to: ../docs/tables/multi_horizon_performance.csv")

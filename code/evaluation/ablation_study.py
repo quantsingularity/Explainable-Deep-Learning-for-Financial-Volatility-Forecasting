@@ -5,17 +5,17 @@ Compares LSTM-only vs LSTM+Attention vs LSTM+Attention+SHAP
 
 import os
 import time
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import shap
 import tensorflow as tf
-from model import AttentionLayer, create_callbacks, pinball_loss
+from core.model import AttentionLayer, create_callbacks, pinball_loss
+from core.utils import calculate_mae, calculate_r2, calculate_rmse
 from tensorflow import keras
 from tensorflow.keras import Model, layers
-from utils import calculate_mae, calculate_r2, calculate_rmse
 
 # Set seeds
 np.random.seed(123)
@@ -28,11 +28,13 @@ class LSTMOnlyModel:
     @staticmethod
     def build(
         input_shape: Tuple[int, int],
-        lstm_units: List[int] = [128, 64],
+        lstm_units: Optional[List[int]] = None,
         dense_units: int = 32,
         dropout: float = 0.2,
     ) -> Model:
         """Build LSTM-only model"""
+        if lstm_units is None:
+            lstm_units = [128, 64]
 
         inputs = layers.Input(shape=input_shape, name="input")
 
@@ -69,12 +71,14 @@ class LSTMAttentionModel:
     @staticmethod
     def build(
         input_shape: Tuple[int, int],
-        lstm_units: List[int] = [128, 64],
+        lstm_units: Optional[List[int]] = None,
         attention_units: int = 64,
         dense_units: int = 32,
         dropout: float = 0.2,
     ) -> Model:
         """Build LSTM+Attention model"""
+        if lstm_units is None:
+            lstm_units = [128, 64]
 
         inputs = layers.Input(shape=input_shape, name="input")
 
@@ -118,12 +122,14 @@ class LSTMAttentionSHAPModel:
     @staticmethod
     def build(
         input_shape: Tuple[int, int],
-        lstm_units: List[int] = [128, 64],
+        lstm_units: Optional[List[int]] = None,
         attention_units: int = 64,
         dense_units: int = 32,
         dropout: float = 0.2,
     ) -> Model:
         """Build complete LSTM+Attention+SHAP model (same as LSTM+Attention structurally)"""
+        if lstm_units is None:
+            lstm_units = [128, 64]
 
         # Architecture is same as LSTM+Attention
         # SHAP is applied post-training for interpretability
@@ -356,7 +362,7 @@ class AblationStudy:
 
         return comparison_df
 
-    def plot_ablation_results(self, save_path: str = "../figures"):
+    def plot_ablation_results(self, save_path: str = "../docs/figures"):
         """Generate visualization of ablation study results"""
 
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))

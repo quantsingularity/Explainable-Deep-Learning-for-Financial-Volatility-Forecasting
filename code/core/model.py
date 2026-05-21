@@ -97,7 +97,7 @@ class AttentionLayer(layers.Layer):
 
 def build_lstm_attention_model(
     input_shape,
-    lstm_units=[128, 64],
+    lstm_units=None,
     attention_units=64,
     dense_units=32,
     dropout=0.2,
@@ -111,7 +111,7 @@ def build_lstm_attention_model(
     input_shape : tuple
         Input shape (time_steps, n_features)
     lstm_units : list
-        Number of units in each LSTM layer
+        Number of units in each LSTM layer (default: [128, 64])
     attention_units : int
         Number of units in attention mechanism
     dense_units : int
@@ -126,6 +126,8 @@ def build_lstm_attention_model(
     model : keras.Model
         Compiled LSTM-Attention model
     """
+    if lstm_units is None:
+        lstm_units = [128, 64]
     # Input layer
     inputs = layers.Input(shape=input_shape, name="input_sequence")
 
@@ -219,7 +221,7 @@ def compile_model(model, learning_rate=1e-3):
     # Define losses
     losses = {
         "volatility": "mse",  # Mean Squared Error for volatility
-        "var": lambda y_true, y_pred: pinball_loss(y_true, y_pred, tau=0.01),
+        "var": lambda y_true, y_pred, tau=0.01: pinball_loss(y_true, y_pred, tau=tau),
     }
 
     # Loss weights (prioritize volatility prediction)

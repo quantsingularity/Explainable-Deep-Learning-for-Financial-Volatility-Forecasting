@@ -7,8 +7,8 @@ import pickle
 
 import numpy as np
 import tensorflow as tf
-from model import build_lstm_attention_model, compile_model, create_callbacks
-from utils import load_and_prepare_data, train_val_test_split
+from core.model import build_lstm_attention_model, compile_model, create_callbacks
+from core.utils import load_and_prepare_data, train_val_test_split
 
 # Set seeds for reproducibility
 np.random.seed(123)
@@ -98,7 +98,7 @@ def train_model(data_dict, epochs=100, batch_size=64, save_path="../models"):
     return model, history
 
 
-def plot_training_history(history, save_path="../figures"):
+def plot_training_history(history, save_path="../docs/figures"):
     """
     Plot and save training history.
 
@@ -156,7 +156,7 @@ def plot_training_history(history, save_path="../figures"):
 if __name__ == "__main__":
     # Load and prepare data
     print("Loading data...")
-    df, feature_cols = load_and_prepare_data("../data/synthetic_data.csv")
+    df, feature_cols = load_and_prepare_data("./data/synthetic_data.csv")
 
     # Split data
     data_dict = train_val_test_split(
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     )
 
     # Plot training history
-    plot_training_history(history, save_path="../figures")
+    plot_training_history(history, save_path="../docs/figures")
 
     print("\n" + "=" * 70)
     print("TRAINING PIPELINE COMPLETED")

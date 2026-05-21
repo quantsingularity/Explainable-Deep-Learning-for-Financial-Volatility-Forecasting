@@ -65,10 +65,10 @@ services:
       TF_FORCE_GPU_ALLOW_GROWTH: "true"
       PYTHONPATH: /app
     volumes:
-      - ./data:/app/data
+      - ./code/data:/app/data
       - ./models:/app/models
-      - ./figures:/app/figures
-      - ./tables:/app/tables
+      - ./docs/figures:/app/figures
+      - ./docs/tables:/app/tables
       - ./logs:/app/logs
       - ./config.ini:/app/config.ini
     depends_on:
@@ -93,10 +93,10 @@ services:
       NVIDIA_VISIBLE_DEVICES: all
       PYTHONPATH: /app
     volumes:
-      - ./data:/app/data
+      - ./code/data:/app/data
       - ./models:/app/models
-      - ./figures:/app/figures
-      - ./tables:/app/tables
+      - ./docs/figures:/app/figures
+      - ./docs/tables:/app/tables
       - ./logs:/app/logs
       - ./config.ini:/app/config.ini
     depends_on:
@@ -129,7 +129,7 @@ services:
       PYTHONPATH: /app
     volumes:
       - ./models:/app/models:ro
-      - ./data:/app/data:ro
+      - ./code/data:/app/data:ro
       - ./logs:/app/logs
     ports:
       - "8000:8000"

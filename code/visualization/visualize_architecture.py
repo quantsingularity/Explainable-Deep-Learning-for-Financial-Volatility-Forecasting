@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
 
-def create_architecture_diagram(save_path="../figures/model_architecture.png"):
+def create_architecture_diagram(save_path="../docs/figures/model_architecture.png"):
     """
     Create a visual diagram of the LSTM-Attention-SHAP architecture.
 

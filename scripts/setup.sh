@@ -190,11 +190,11 @@ start_core_services() {
 download_data() {
     print_info "Checking for sample data..."
     
-    if [ ! -f data/synthetic_data.csv ]; then
+    if [ ! -f code/data/synthetic_data.csv ]; then
         print_info "Generating synthetic data..."
         
         if command -v python3 &> /dev/null; then
-            python3 code/data_generator.py
+            cd code && python3 -m data_processing.data_generator && cd ..
             print_success "Synthetic data generated"
         else
             print_warning "Python not available. Will generate data in container during training."

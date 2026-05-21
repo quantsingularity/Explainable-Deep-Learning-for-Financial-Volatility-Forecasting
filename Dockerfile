@@ -24,42 +24,40 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy requirements first for better layer caching
-COPY requirements.txt requirements-prod.txt ./
+COPY code/requirements.txt ./
 
 # Install Python dependencies
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install -r requirements.txt && \
-    pip install -r requirements-prod.txt
+    pip install -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p data models figures tables logs mlruns checkpoints
+# Create necessary runtime directories
+RUN mkdir -p code/data models docs/figures docs/tables logs mlruns checkpoints
 
-# Set permissions
-RUN chmod +x run_all.sh
+# Set permissions on scripts
+RUN chmod +x scripts/run_all.sh scripts/setup.sh scripts/lint.sh
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import tensorflow as tf; print(tf.__version__)" || exit 1
 
-# Default command
-CMD ["python", "code/main_pipeline.py"]
+# Default — run from code/ so all relative paths resolve correctly
+CMD ["bash", "-c", "cd /app/code && python main_pipeline.py"]
 
 # --- Development Stage ---
 FROM base as development
-RUN pip install jupyter ipython ipdb black flake8 pylint pytest-xdist
+RUN pip install ipython ipdb pytest-xdist
 EXPOSE 8888 6006
-CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"]
+CMD ["bash", "-c", "cd /app/code && jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root"]
 
 # --- Training Stage ---
 FROM base as training
 ENV MODE=training
-CMD ["python", "code/train_multi_horizon.py"]
+CMD ["bash", "-c", "cd /app/code && python -m training.train_multi_horizon"]
 
 # --- Inference/API Stage ---
 FROM base as api
-COPY code/api_server.py ./
 EXPOSE 8000
-CMD ["python", "code/api_server.py"]
+CMD ["bash", "-c", "cd /app/code && python -m serving.api_server"]

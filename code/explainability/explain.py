@@ -123,7 +123,7 @@ def aggregate_shap_across_time(shap_values, feature_names):
     return importance_df
 
 
-def plot_shap_summary(shap_values, X_test, feature_names, save_path="../figures"):
+def plot_shap_summary(shap_values, X_test, feature_names, save_path="../docs/figures"):
     """
     Create SHAP beeswarm plot showing feature importance and impacts.
 
@@ -172,7 +172,7 @@ def plot_shap_summary(shap_values, X_test, feature_names, save_path="../figures"
     plt.close()
 
 
-def plot_shap_bar(importance_df, save_path="../figures", top_n=12):
+def plot_shap_bar(importance_df, save_path="../docs/figures", top_n=12):
     """
     Create bar plot of global feature importance.
 
@@ -216,7 +216,9 @@ def plot_shap_bar(importance_df, save_path="../figures", top_n=12):
     plt.close()
 
 
-def plot_attention_heatmap(attention_weights, save_path="../figures", n_samples=50):
+def plot_attention_heatmap(
+    attention_weights, save_path="../docs/figures", n_samples=50
+):
     """
     Plot attention weights heatmap.
 
@@ -263,7 +265,7 @@ def plot_attention_heatmap(attention_weights, save_path="../figures", n_samples=
     plt.close()
 
 
-def create_interpretability_report(importance_df, save_path="../paper"):
+def create_interpretability_report(importance_df, save_path="../docs/tables"):
     """
     Create interpretability report with key findings.
 

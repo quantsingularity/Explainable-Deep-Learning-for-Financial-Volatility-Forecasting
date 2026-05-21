@@ -1,17 +1,21 @@
 # Explainable Deep Learning for Financial Volatility Forecasting
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18667024.svg)](https://doi.org/10.5281/zenodo.18667024)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](requirements.txt)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.0+-red.svg)](requirements.txt)
-[![MLOps](https://img.shields.io/badge/MLOps-MLflow%2FDocker-blue.svg)](README_PRODUCTION.md)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](infrastructure/requirements.txt)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.0+-red.svg)](infrastructure/requirements.txt)
+[![MLOps](https://img.shields.io/badge/MLOps-MLflow%2FDocker-blue.svg)](docker-compose.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A research-grade and production-ready framework for financial volatility forecasting using a hybrid **LSTM-Attention architecture** jointly optimized for volatility prediction and Value-at-Risk estimation. Integrates **SHAP explainability** for regulatory transparency and supports multi-horizon forecasting across equities, commodities, and currencies.
+A research-grade and production-ready framework for financial volatility forecasting using a hybrid
+**LSTM-Attention architecture** jointly optimised for volatility prediction and Value-at-Risk
+estimation. Integrates **SHAP explainability** for regulatory transparency and supports
+multi-horizon forecasting across equities, commodities, and currencies.
 
 ---
 
 ## Table of Contents
 
+- [Project Structure](#project-structure)
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Quick Start](#quick-start)
@@ -23,13 +27,77 @@ A research-grade and production-ready framework for financial volatility forecas
 
 ---
 
+## Project Structure
+
+```
+.
+├── .github/
+│   ├── readme/                       # GitHub-rendered README assets
+│   └── workflows/
+│       └── cicd.yml                  # CI formatting checks (black, ruff, prettier)
+├── code/
+│   ├── core/                         # Model architecture and shared utilities
+│   │   ├── __init__.py
+│   │   ├── model.py                  # LSTM-Attention-SHAP model definition
+│   │   └── utils.py                  # Metrics, VaR tests, data helpers
+│   ├── data_processing/              # Data ingestion
+│   │   ├── __init__.py
+│   │   ├── data_generator.py         # Synthetic dataset generation
+│   │   └── download_real_data.py     # yfinance / pandas-datareader fetcher
+│   ├── training/                     # Model training
+│   │   ├── __init__.py
+│   │   ├── train.py                  # Single-horizon training loop
+│   │   ├── train_multi_horizon.py    # Multi-horizon (1d / 5d / 22d) training
+│   │   └── training_optimization.py  # Mixed precision, pruning, distillation
+│   ├── evaluation/                   # Metrics, ablation, baselines, backtest
+│   │   ├── __init__.py
+│   │   ├── eval.py                   # Evaluation metrics and VaR backtesting
+│   │   ├── ablation_study.py         # Component ablation experiments
+│   │   ├── baseline_models.py        # GARCH / HAR-RV / XGBoost baselines
+│   │   └── trading_backtest.py       # Vol-arb and trend-following strategies
+│   ├── explainability/               # XAI
+│   │   ├── __init__.py
+│   │   └── explain.py                # SHAP + attention explainability
+│   ├── serving/                      # API and real-time inference
+│   │   ├── __init__.py
+│   │   ├── api_server.py             # FastAPI inference server
+│   │   └── streaming_inference.py    # Real-time streaming pipeline
+│   ├── visualization/                # Research outputs
+│   │   ├── __init__.py
+│   │   ├── generate_paper_figures.py # Publication-quality figure generation
+│   │   └── visualize_architecture.py # Model architecture diagram
+│   ├── data/                         # Input datasets
+│   │   └── synthetic_data.csv
+│   ├── tests/                        # Test suite
+│   │   ├── __init__.py
+│   │   ├── test_smoke.py             # Core functionality smoke tests
+│   │   └── test_integration.py       # End-to-end integration tests
+│   ├── main_pipeline.py              # Orchestration entry point
+│   └── requirements.txt              # All dependencies
+├── docs/
+│   ├── USER_GUIDE.md                 # Detailed usage and configuration guide
+│   ├── figures/                      # Pre-generated paper figures (PNG)
+│   └── tables/                       # Pre-generated result tables (CSV)
+├── scripts/
+│   ├── run_all.sh                    # One-command full pipeline execution
+│   ├── setup.sh                      # Production environment setup
+│   └── lint.sh                       # Ruff / flake8 / mypy / pylint runner
+├── Dockerfile                        # Multi-stage image (base / training / api / dev)
+├── docker-compose.yml                # Full stack: MLflow, PostgreSQL, Redis, Grafana
+├── .gitignore
+├── LICENSE
+└── README.md
+```
+
+---
+
 ## Overview
 
 | Category             | Feature               | Description                                                                         | Key Metric                    |
 | :------------------- | :-------------------- | :---------------------------------------------------------------------------------- | :---------------------------- |
 | **Core Model**       | LSTM-Attention Hybrid | LSTM for long-term dependencies + Bahdanau Attention for dynamic temporal weighting | +**17.3%** RMSE vs LSTM-only  |
 | **Interpretability** | SHAP-based XAI        | Global and local feature attribution for regulatory compliance                      | Basel III / SR 11-7 aligned   |
-| **Optimization**     | Multi-Objective Loss  | Joint MSE for point forecasts + Pinball Loss for VaR estimation                     | VaR violation rate: **1.05%** |
+| **Optimisation**     | Multi-Objective Loss  | Joint MSE for point forecasts + Pinball Loss for VaR estimation                     | VaR violation rate: **1.05%** |
 | **MLOps**            | MLflow Integration    | Experiment tracking, model versioning, production registry                          | Full experiment lineage       |
 | **Forecasting**      | Multi-Horizon         | Simultaneous 1-day, 5-day, and 22-day volatility forecasts                          | 3x forecast coverage          |
 | **Validation**       | Backtest Engine       | Vol Arbitrage and Trend Following with realistic cost and slippage                  | Annual return: **18.5%**      |
@@ -58,17 +126,17 @@ git clone https://github.com/quantsingularity/Explainable-Deep-Learning-for-Fina
 cd Explainable-Deep-Learning-for-Financial-Volatility-Forecasting
 
 python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
+pip install -r code/requirements.txt
 ```
 
 ### Automated Research Pipeline
 
 ```bash
-# Runs: data download, training, evaluation, SHAP analysis, figure generation
-bash run_all.sh
+# Runs: data download → training → evaluation → SHAP analysis → figure generation
+bash scripts/run_all.sh
 
-ls figures/   # model_architecture.png, shap_importance_bar.png, ...
-ls tables/    # table1_model_comparison.csv, table2_var_backtesting.csv
+ls docs/figures/   # model_architecture.png, shap_importance_bar.png, ...
+ls docs/tables/    # table1_model_comparison.csv, table2_var_backtesting.csv
 ```
 
 ### Docker Deployment
@@ -104,8 +172,8 @@ The model uses a 15-dimensional feature vector across four categories.
 | Category   | Features                           | Source                       |
 | :--------- | :--------------------------------- | :--------------------------- |
 | Price      | Returns, High-Low Spread           | `code/data_generator.py`     |
-| Volume     | Normalized Volume                  | `code/data_generator.py`     |
-| Volatility | Realized Volatility (RV), VIX      | `code/data_generator.py`     |
+| Volume     | Normalised Volume                  | `code/data_generator.py`     |
+| Volatility | Realised Volatility (RV), VIX      | `code/data_generator.py`     |
 | Lagged     | RV Lag 1, RV Lag 5, Returns Lag 22 | `config.ini` (`lag_periods`) |
 
 ---
@@ -153,7 +221,7 @@ The SHAP module provides dual-layer interpretability for regulatory and risk rep
 
 | Feature                   | Mean Absolute SHAP | Interpretation                                    |
 | :------------------------ | :----------------- | :------------------------------------------------ |
-| Realized Volatility Lag 1 | 0.45               | Yesterday's volatility is the strongest predictor |
+| Realised Volatility Lag 1 | 0.45               | Yesterday's volatility is the strongest predictor |
 | VIX Index                 | 0.32               | Market-wide fear and risk sentiment               |
 | RV Lag 22 (1-Month)       | 0.18               | Long-term volatility clustering                   |
 | High-Low Spread           | 0.11               | Intra-day price movement indicator                |
@@ -162,13 +230,26 @@ The SHAP module provides dual-layer interpretability for regulatory and risk rep
 
 ## MLOps and Production
 
-### Training Optimization
+### Training Optimisation
 
 | Technique              | Purpose                                   | Impact                                     |
 | :--------------------- | :---------------------------------------- | :----------------------------------------- |
 | Mixed Precision (FP16) | Reduces memory, accelerates GPU training  | 2-3x speedup                               |
 | Model Pruning          | Removes unnecessary weights               | 50% smaller, less than 5% performance loss |
 | Knowledge Distillation | Smaller student model from larger teacher | 90%+ retention at 50% size                 |
+
+### Infrastructure Setup
+
+```bash
+# Full production environment setup (interactive)
+bash scripts/setup.sh
+
+# Lint the codebase
+bash scripts/lint.sh
+```
+
+See [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) for detailed configuration, API reference, and
+deployment instructions.
 
 ---
 

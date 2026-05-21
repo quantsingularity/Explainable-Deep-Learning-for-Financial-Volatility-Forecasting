@@ -7,8 +7,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy import stats
-from utils import (
+from core.utils import (
     calculate_mae,
     calculate_qlike,
     calculate_r2,
@@ -16,6 +15,7 @@ from utils import (
     christoffersen_test,
     kupiec_test,
 )
+from scipy import stats
 
 # Set random seed
 np.random.seed(123)
@@ -206,7 +206,7 @@ def compare_with_baselines(predictions_dict):
     return comparison_df
 
 
-def plot_var_backtest(var_results, predictions_dict, save_path="../figures"):
+def plot_var_backtest(var_results, predictions_dict, save_path="../docs/figures"):
     """
     Plot VaR backtesting results.
 
@@ -273,7 +273,7 @@ def plot_var_backtest(var_results, predictions_dict, save_path="../figures"):
     plt.close()
 
 
-def generate_results_table(comparison_df, var_results, save_path="../paper"):
+def generate_results_table(comparison_df, var_results, save_path="../docs/tables"):
     """
     Generate formatted results tables for the paper.
 

@@ -5,13 +5,13 @@ Smoke Tests for Volatility Forecasting Pipeline
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "code"))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import numpy as np
 import tensorflow as tf
-from data_generator import generate_synthetic_dataset
-from model import build_lstm_attention_model, compile_model
-from utils import calculate_rmse, create_sequences
+from core.model import build_lstm_attention_model, compile_model
+from core.utils import calculate_rmse, create_sequences
+from data_processing.data_generator import generate_synthetic_dataset
 
 # Set seeds
 np.random.seed(123)

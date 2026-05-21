@@ -368,7 +368,9 @@ class BacktestEngine:
         }
 
 
-def compare_strategies(results_dict: Dict[str, Dict], save_path: str = "../figures"):
+def compare_strategies(
+    results_dict: Dict[str, Dict], save_path: str = "../docs/figures"
+):
     """
     Compare multiple trading strategies
 

@@ -343,7 +343,8 @@ def christoffersen_test(violations_binary):
     pi = (n01 + n11) / n_transitions if n_transitions > 0 else 0
 
     # Likelihood ratio
-    if pi_01 == 0 or pi_11 == 0 or pi == 0:
+    # Guard every log argument to avoid log(0) = -inf and log(1-1) = log(0) = -inf
+    if pi_01 <= 0 or pi_01 >= 1 or pi_11 <= 0 or pi_11 >= 1 or pi <= 0 or pi >= 1:
         lr_stat = 0
     else:
         lr_stat = -2 * (
