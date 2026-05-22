@@ -208,9 +208,12 @@ class StreamingInferencePipeline:
     def _load_model(self) -> tf.keras.Model:
         """Load trained model with custom objects"""
 
-        from core.model import AttentionLayer
+        from core.model import AttentionLayer, pinball_loss
 
-        custom_objects = {"AttentionLayer": AttentionLayer}
+        custom_objects = {
+            "AttentionLayer": AttentionLayer,
+            "pinball_loss": pinball_loss,
+        }
 
         logger.info(f"Loading model from {self.model_path}...")
         model = tf.keras.models.load_model(
@@ -324,8 +327,11 @@ class StreamingInferencePipeline:
         # Inference
         predictions = self.model.predict(sequence, verbose=0)
 
-        # Extract predictions
-        if isinstance(predictions, list):
+        # Extract predictions — named-output models return a dict
+        if isinstance(predictions, dict):
+            volatility_pred = float(predictions["volatility"][0][0])
+            var_pred = float(predictions["var"][0][0])
+        elif isinstance(predictions, list):
             volatility_pred = float(predictions[0][0][0])
             var_pred = float(predictions[1][0][0])
         else:

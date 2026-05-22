@@ -50,7 +50,12 @@ def evaluate_volatility_forecast(model, data_dict, scaler):
 
     # Make predictions
     predictions = model.predict(X_test, verbose=0)
-    y_pred_vol = predictions[0].flatten()  # Volatility predictions
+
+    # Named outputs return a dict; fall back to positional for single-output models
+    if isinstance(predictions, dict):
+        y_pred_vol = predictions["volatility"].flatten()
+    else:
+        y_pred_vol = predictions[0].flatten()  # Volatility predictions
 
     # Inverse transform to original scale
     y_test_original = scaler.inverse_transform(y_test.reshape(-1, 1)).flatten()

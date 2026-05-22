@@ -129,16 +129,33 @@ def plot_training_history(history, save_path="../docs/figures"):
     axes[0].legend(fontsize=11)
     axes[0].grid(True, alpha=0.3)
 
-    # Plot volatility loss
-    axes[1].plot(
-        history_dict["volatility_loss"], label="Training Vol Loss", linewidth=2
+    # Plot volatility loss — key name varies across TF versions
+    vol_loss_key = next(
+        (k for k in ("volatility_loss", "output_1_loss") if k in history_dict),
+        None,
     )
-    axes[1].plot(
-        history_dict["val_volatility_loss"], label="Validation Vol Loss", linewidth=2
+    val_vol_loss_key = next(
+        (k for k in ("val_volatility_loss", "val_output_1_loss") if k in history_dict),
+        None,
     )
+
+    if vol_loss_key and val_vol_loss_key:
+        axes[1].plot(history_dict[vol_loss_key], label="Training Vol Loss", linewidth=2)
+        axes[1].plot(
+            history_dict[val_vol_loss_key], label="Validation Vol Loss", linewidth=2
+        )
+        axes[1].set_ylabel("Volatility Loss (MSE)", fontsize=12)
+        axes[1].set_title("Volatility Prediction Loss", fontsize=14, fontweight="bold")
+    else:
+        # Fallback: repeat the total loss if per-output keys are unavailable
+        axes[1].plot(history_dict["loss"], label="Training Loss", linewidth=2)
+        axes[1].plot(history_dict["val_loss"], label="Validation Loss", linewidth=2)
+        axes[1].set_ylabel("Loss", fontsize=12)
+        axes[1].set_title(
+            "Training Loss (fallback view)", fontsize=14, fontweight="bold"
+        )
+
     axes[1].set_xlabel("Epoch", fontsize=12)
-    axes[1].set_ylabel("Volatility Loss (MSE)", fontsize=12)
-    axes[1].set_title("Volatility Prediction Loss", fontsize=14, fontweight="bold")
     axes[1].legend(fontsize=11)
     axes[1].grid(True, alpha=0.3)
 

@@ -152,7 +152,7 @@ class AblationStudy:
 
         losses = {
             "volatility": "mse",
-            "var": lambda y_true, y_pred: pinball_loss(y_true, y_pred, tau=0.01),
+            "var": pinball_loss,  # tau defaults to 0.01 (99% VaR); registered serializable
         }
 
         loss_weights = {"volatility": 1.0, "var": 0.5}
@@ -217,7 +217,11 @@ class AblationStudy:
 
         # Evaluate
         predictions = model.predict(X_test, verbose=0)
-        y_pred = predictions[0].flatten()
+        # Named-output models return a dict; positional list for unnamed outputs
+        if isinstance(predictions, dict):
+            y_pred = predictions["volatility"].flatten()
+        else:
+            y_pred = predictions[0].flatten()
 
         # Calculate metrics
         rmse = calculate_rmse(y_test, y_pred)

@@ -118,9 +118,12 @@ def load_model(model_path: str = "/app/models/lstm_attention_model.keras"):
     try:
         logger.info(f"Loading model from {model_path}")
 
-        from core.model import AttentionLayer
+        from core.model import AttentionLayer, pinball_loss
 
-        custom_objects = {"AttentionLayer": AttentionLayer}
+        custom_objects = {
+            "AttentionLayer": AttentionLayer,
+            "pinball_loss": pinball_loss,
+        }
         model = tf.keras.models.load_model(model_path, custom_objects=custom_objects)
 
         # Warmup inference
@@ -274,8 +277,11 @@ async def predict_volatility(request: VolatilityRequest):
 
         MODEL_INFERENCE_LATENCY.observe(inference_time / 1000)
 
-        # Extract predictions
-        if isinstance(predictions, list):
+        # Extract predictions — named-output models return a dict
+        if isinstance(predictions, dict):
+            volatility_pred = float(predictions["volatility"][0][0])
+            var_pred = float(predictions["var"][0][0]) if request.return_var else None
+        elif isinstance(predictions, list):
             volatility_pred = float(predictions[0][0][0])
             var_pred = float(predictions[1][0][0]) if request.return_var else None
         else:
@@ -325,11 +331,13 @@ async def predict_volatility(request: VolatilityRequest):
 @app.post("/predict/batch")
 async def predict_batch(batch_request: BatchVolatilityRequest):
     """
-    Batch prediction endpoint for multiple assets
+    Batch prediction endpoint for multiple assets.
+    ACTIVE_REQUESTS is tracked per-request inside predict_volatility;
+    we only add a batch-level request counter here to avoid double-counting.
     """
 
     start_time = time.time()
-    ACTIVE_REQUESTS.inc()
+    REQUEST_COUNT.labels(endpoint="/predict/batch", status="received").inc()
 
     try:
         if not model_loaded or model is None:
@@ -350,6 +358,7 @@ async def predict_batch(batch_request: BatchVolatilityRequest):
                 successful_results.append(result)
 
         total_time = (time.time() - start_time) * 1000
+        REQUEST_COUNT.labels(endpoint="/predict/batch", status="success").inc()
 
         return {
             "predictions": successful_results,
@@ -359,11 +368,9 @@ async def predict_batch(batch_request: BatchVolatilityRequest):
         }
 
     except Exception as e:
+        REQUEST_COUNT.labels(endpoint="/predict/batch", status="error").inc()
         logger.error(f"Batch prediction error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
-    finally:
-        ACTIVE_REQUESTS.dec()
 
 
 @app.get("/model/info")

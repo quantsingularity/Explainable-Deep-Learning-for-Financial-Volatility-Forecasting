@@ -71,11 +71,14 @@ def main():
     # Check if model exists
     if os.path.exists(model_path):
         print(f"Loading existing model from {model_path}...")
-        from core.model import AttentionLayer
+        from core.model import AttentionLayer, pinball_loss
 
         model = tf.keras.models.load_model(
             model_path,
-            custom_objects={"AttentionLayer": AttentionLayer},
+            custom_objects={
+                "AttentionLayer": AttentionLayer,
+                "pinball_loss": pinball_loss,
+            },
         )
     else:
         print("Training new model...")

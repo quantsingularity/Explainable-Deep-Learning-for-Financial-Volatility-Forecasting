@@ -51,7 +51,11 @@ def prepare_shap_background(X_train, n_samples=100):
 
 def compute_shap_values(model, X_test, background, feature_names):
     """
-    Compute SHAP values using DeepExplainer.
+    Compute SHAP values using GradientExplainer.
+
+    GradientExplainer is used instead of DeepExplainer because it handles
+    TF2 models with custom layers (e.g. AttentionLayer returning a tuple)
+    more reliably through standard gradient computation.
 
     Parameters:
     -----------
@@ -68,16 +72,17 @@ def compute_shap_values(model, X_test, background, feature_names):
     --------
     shap_values : list
         SHAP values for each output
-    explainer : shap.DeepExplainer
+    explainer : shap.GradientExplainer
         SHAP explainer object
     """
     print("\n" + "=" * 70)
     print("COMPUTING SHAP VALUES")
     print("=" * 70)
 
-    # Create DeepExplainer
-    print("Initializing DeepExplainer...")
-    explainer = shap.DeepExplainer(model, background)
+    # GradientExplainer works reliably with TF2 functional-API models
+    # including those with custom layers that return tuples.
+    print("Initializing GradientExplainer...")
+    explainer = shap.GradientExplainer(model, background)
 
     # Compute SHAP values (use subset for efficiency)
     n_explain = min(200, len(X_test))

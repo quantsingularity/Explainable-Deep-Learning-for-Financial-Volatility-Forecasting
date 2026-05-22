@@ -151,9 +151,7 @@ class MultiHorizonVolatilityModel:
             metrics[f"volatility_h{horizon}"] = ["mae", "mse"]
 
             # VaR losses (Pinball) — use default-arg capture to avoid closure over loop var
-            losses[f"var_h{horizon}"] = lambda y_true, y_pred, tau=0.01: pinball_loss(
-                y_true, y_pred, tau=tau
-            )
+            losses[f"var_h{horizon}"] = pinball_loss  # tau defaults to 0.01 (99% VaR)
             loss_weights[f"var_h{horizon}"] = 0.3 / horizon
             metrics[f"var_h{horizon}"] = ["mae"]
 
@@ -360,7 +358,7 @@ def evaluate_multi_horizon_performance(
     results_df : pd.DataFrame
         Performance metrics for each horizon
     """
-    from utils import calculate_mae, calculate_r2, calculate_rmse
+    from core.utils import calculate_mae, calculate_r2, calculate_rmse
 
     X_test = data_dict["test"]["X"]
     y_test = data_dict["test"]["y"]

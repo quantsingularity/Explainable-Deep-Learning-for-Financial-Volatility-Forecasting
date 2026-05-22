@@ -41,7 +41,7 @@ class TestMultiHorizonForecasting:
         assert len(model_wrapper.horizons) == 3
 
         # Check output heads
-        output_names = [layer.name for layer in model_wrapper.model.outputs]
+        output_names = model_wrapper.model.output_names
         for horizon in horizons:
             assert f"volatility_h{horizon}" in output_names
             assert f"var_h{horizon}" in output_names

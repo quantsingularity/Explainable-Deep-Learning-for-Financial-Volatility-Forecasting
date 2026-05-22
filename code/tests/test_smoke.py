@@ -75,16 +75,22 @@ def test_model_architecture():
     assert len(model.layers) > 0, "Model has no layers"
     assert model.count_params() > 0, "Model has no parameters"
 
-    # Check output shapes
+    # Check output shapes — TF2 named-output models return a dict from predict()
     dummy_input = np.random.randn(8, 30, 12)
     outputs = model.predict(dummy_input, verbose=0)
 
-    assert len(outputs) == 2, f"Wrong number of outputs: {len(outputs)}"
-    assert outputs[0].shape == (
-        8,
-        1,
-    ), f"Wrong volatility output shape: {outputs[0].shape}"
-    assert outputs[1].shape == (8, 1), f"Wrong VaR output shape: {outputs[1].shape}"
+    if isinstance(outputs, dict):
+        assert "volatility" in outputs, "Missing 'volatility' output key"
+        assert "var" in outputs, "Missing 'var' output key"
+        vol_shape = outputs["volatility"].shape
+        var_shape = outputs["var"].shape
+    else:
+        assert len(outputs) == 2, f"Wrong number of outputs: {len(outputs)}"
+        vol_shape = outputs[0].shape
+        var_shape = outputs[1].shape
+
+    assert vol_shape == (8, 1), f"Wrong volatility output shape: {vol_shape}"
+    assert var_shape == (8, 1), f"Wrong VaR output shape: {var_shape}"
 
     print("  ✓ Model architecture valid")
     print(f"  Total parameters: {model.count_params():,}")

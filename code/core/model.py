@@ -175,9 +175,12 @@ def build_lstm_attention_model(
     return model
 
 
+@tf.keras.saving.register_keras_serializable(package="VolatilityForecasting")
 def pinball_loss(y_true, y_pred, tau=0.01):
     """
     Pinball loss (quantile loss) for VaR prediction.
+    Registered as a Keras-serializable function so it is preserved
+    when a model is saved and reloaded in .keras format.
 
     Parameters:
     -----------
@@ -218,10 +221,11 @@ def compile_model(model, learning_rate=1e-3):
         learning_rate=learning_rate, beta_1=0.9, beta_2=0.999
     )
 
-    # Define losses
+    # Define losses — pinball_loss is @register_keras_serializable so it
+    # round-trips correctly through .keras save/load without custom_objects.
     losses = {
-        "volatility": "mse",  # Mean Squared Error for volatility
-        "var": lambda y_true, y_pred, tau=0.01: pinball_loss(y_true, y_pred, tau=tau),
+        "volatility": "mse",
+        "var": pinball_loss,  # tau defaults to 0.01 (99 % VaR)
     }
 
     # Loss weights (prioritize volatility prediction)
