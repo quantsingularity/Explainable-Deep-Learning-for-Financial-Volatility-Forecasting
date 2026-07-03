@@ -1,5 +1,5 @@
 """
-pytest conftest.py — ensures the code/ root is on sys.path so all packages
+pytest conftest.py: ensures the code/ root is on sys.path so all packages
 (core, training, evaluation, …) are importable when running:
     cd code && python -m pytest tests/
 """

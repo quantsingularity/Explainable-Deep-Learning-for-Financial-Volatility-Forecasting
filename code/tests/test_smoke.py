@@ -32,8 +32,6 @@ def test_data_generation():
     print("  ✓ Data generation successful")
     print(f"  Generated {len(df)} samples with {len(df.columns)} features")
 
-    return df
-
 
 def test_sequence_creation():
     """Test sequence creation for LSTM."""
@@ -59,8 +57,6 @@ def test_sequence_creation():
     print("  ✓ Sequence creation successful")
     print(f"  X shape: {X.shape}, y shape: {y.shape}")
 
-    return X, y
-
 
 def test_model_architecture():
     """Test model building and compilation."""
@@ -75,7 +71,7 @@ def test_model_architecture():
     assert len(model.layers) > 0, "Model has no layers"
     assert model.count_params() > 0, "Model has no parameters"
 
-    # Check output shapes — TF2 named-output models return a dict from predict()
+    # Check output shapes: TF2 named-output models return a dict from predict()
     dummy_input = np.random.randn(8, 30, 12)
     outputs = model.predict(dummy_input, verbose=0)
 
@@ -95,8 +91,6 @@ def test_model_architecture():
     print("  ✓ Model architecture valid")
     print(f"  Total parameters: {model.count_params():,}")
     print(f"  Outputs: {[o.shape for o in outputs]}")
-
-    return model
 
 
 def test_training_step():
@@ -125,8 +119,6 @@ def test_training_step():
 
     print("  ✓ Training step successful")
     print(f"  Final loss: {history.history['loss'][0]:.4f}")
-
-    return model
 
 
 def test_evaluation_metrics():

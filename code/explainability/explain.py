@@ -7,7 +7,27 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
+
+try:
+    import seaborn as sns
+
+    _HAS_SEABORN = True
+except Exception:  # missing seaborn, or seaborn too old for this matplotlib
+    sns = None
+    _HAS_SEABORN = False
+
+
+def _require_seaborn():
+    """Raise a clear error when a seaborn-based plot is requested."""
+    if not _HAS_SEABORN:
+        raise ImportError(
+            "seaborn (>=0.13) is required for this plot but could not be "
+            "imported. Older seaborn versions are incompatible with "
+            "matplotlib >= 3.9 (register_cmap removal). "
+            "Fix with: pip install -U 'seaborn>=0.13'"
+        )
+
+
 import shap
 from sklearn.cluster import KMeans
 
@@ -79,16 +99,42 @@ def compute_shap_values(model, X_test, background, feature_names):
     print("COMPUTING SHAP VALUES")
     print("=" * 70)
 
+    # GradientExplainer's TF gradient graph assumes a single output tensor
+    # (it indexes `out[:, i]`), so it fails on multi-output models such as
+    # ours ([volatility, var]). Wrap the model in a single-output submodel
+    # exposing only the volatility head; this is also what the paper
+    # explains. The wrapper shares weights with the original model.
+    explain_model = model
+    if isinstance(model.output, (list, tuple)) and len(model.output) > 1:
+        from tensorflow import keras as _keras
+
+        print("Multi-output model detected: explaining the volatility head.")
+        explain_model = _keras.Model(
+            inputs=model.input,
+            outputs=model.outputs[0],
+            name=f"{model.name}_volatility_head",
+        )
+
     # GradientExplainer works reliably with TF2 functional-API models
     # including those with custom layers that return tuples.
     print("Initializing GradientExplainer...")
-    explainer = shap.GradientExplainer(model, background)
+    explainer = shap.GradientExplainer(explain_model, background)
 
     # Compute SHAP values (use subset for efficiency)
     n_explain = min(200, len(X_test))
     print(f"Computing SHAP values for {n_explain} test samples...")
 
     shap_values = explainer.shap_values(X_test[:n_explain])
+
+    # Normalise the return shape so downstream code can always use
+    # shap_values[0] for the volatility output:
+    # - single-output explanations may come back as a bare array
+    # - some shap versions append a trailing singleton output axis
+    if not isinstance(shap_values, list):
+        arr = np.asarray(shap_values)
+        if arr.ndim == 4 and arr.shape[-1] == 1:
+            arr = arr[..., 0]
+        shap_values = [arr]
 
     print(f"SHAP values computed. Shape: {np.array(shap_values[0]).shape}")
 
@@ -236,6 +282,7 @@ def plot_attention_heatmap(
     n_samples : int
         Number of samples to visualize
     """
+    _require_seaborn()
     print(f"\nGenerating attention heatmap for {n_samples} samples...")
 
     # Select subset and squeeze last dimension
@@ -304,9 +351,25 @@ def create_interpretability_report(importance_df, save_path="../docs/tables"):
     report.append(
         f"  {top_feature} is the dominant driver with mean |SHAP| = {top_importance:.4f}"
     )
-    report.append(
-        "  This confirms the critical role of geopolitical factors in volatility forecasting."
+
+    # Interpret the top driver by feature family rather than asserting a
+    # fixed conclusion that may not match the data.
+    _feature_interpretations = {
+        "gpr": "This highlights the role of geopolitical risk in volatility forecasting.",
+        "vix": "This highlights the role of implied-volatility (market fear) signals.",
+        "realized": "This highlights strong volatility persistence (clustering).",
+        "return": "This highlights the leverage effect of recent returns on volatility.",
+        "volume": "This highlights the information content of trading activity.",
+    }
+    interpretation = next(
+        (
+            text
+            for key, text in _feature_interpretations.items()
+            if key in str(top_feature).lower()
+        ),
+        "See the ranked table above for the full driver decomposition.",
     )
+    report.append(f"  {interpretation}")
 
     report_text = "\n".join(report)
     print(report_text)

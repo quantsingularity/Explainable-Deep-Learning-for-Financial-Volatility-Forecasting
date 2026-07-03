@@ -1,5 +1,5 @@
 # ============================================================
-# LSTM-Attention-SHAP Volatility Forecasting — Requirements
+# LSTM-Attention-SHAP Volatility Forecasting: Requirements
 # ============================================================
 
 # ── Core Deep Learning ────────────────────────────────────────
@@ -24,7 +24,7 @@ shap==0.43.0
 
 # ── Visualization ─────────────────────────────────────────────
 matplotlib==3.7.2
-seaborn==0.12.2
+seaborn>=0.13  # older versions break on matplotlib>=3.9 (register_cmap removed)
 plotly==5.17.0
 
 # ── Data Download ─────────────────────────────────────────────

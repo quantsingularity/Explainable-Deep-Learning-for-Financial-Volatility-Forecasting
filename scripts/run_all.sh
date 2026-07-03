@@ -24,7 +24,7 @@ echo "STEP 1/6: DATA PREPARATION"
 echo "======================================================================"
 
 if [ -f "./data/synthetic_data.csv" ]; then
-    echo "Synthetic data already exists — skipping generation"
+    echo "Synthetic data already exists: skipping generation"
 else
     echo "Generating synthetic financial data..."
     python -m data_processing.data_generator || { echo "Data generation failed"; exit 1; }
@@ -65,14 +65,14 @@ echo "======================================================================"
 echo "STEP 4/6: FIGURE GENERATION"
 echo "======================================================================"
 
-python -m visualization.generate_paper_figures || echo "Figure generation failed — continuing"
+python -m visualization.generate_paper_figures || echo "Figure generation failed: continuing"
 
 echo ""
 echo "======================================================================"
 echo "STEP 5/6: TESTS"
 echo "======================================================================"
 
-python -m pytest tests/test_smoke.py -v || echo "Some tests failed — continuing"
+python -m pytest tests/test_smoke.py -v || echo "Some tests failed: continuing"
 
 echo ""
 echo "======================================================================"

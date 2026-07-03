@@ -129,7 +129,7 @@ def plot_training_history(history, save_path="../docs/figures"):
     axes[0].legend(fontsize=11)
     axes[0].grid(True, alpha=0.3)
 
-    # Plot volatility loss — key name varies across TF versions
+    # Plot volatility loss: key name varies across TF versions
     vol_loss_key = next(
         (k for k in ("volatility_loss", "output_1_loss") if k in history_dict),
         None,

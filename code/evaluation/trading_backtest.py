@@ -240,7 +240,7 @@ class BacktestEngine:
         trades = []
         costs = []
 
-        for i in range(1, len(returns)):
+        for i in range(len(returns)):
             # Current signal
             signal = signals[i]
             predicted_vol = volatility_forecasts[i]
@@ -425,6 +425,10 @@ def compare_strategies(
     for strategy_name, results in results_dict.items():
         dates = results["dates"]
         values = results["portfolio_values"]
+        # portfolio_values has one more entry than dates (the initial
+        # capital before the first period); plot end-of-period values.
+        if len(values) == len(dates) + 1:
+            values = values[1:]
         ax.plot(dates, values, label=strategy_name, linewidth=2)
     ax.set_xlabel("Date", fontsize=12)
     ax.set_ylabel("Portfolio Value ($)", fontsize=12)

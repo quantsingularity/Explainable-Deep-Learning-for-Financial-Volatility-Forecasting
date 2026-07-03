@@ -150,7 +150,7 @@ class MultiHorizonVolatilityModel:
             )  # Weight by inverse of horizon
             metrics[f"volatility_h{horizon}"] = ["mae", "mse"]
 
-            # VaR losses (Pinball) — use default-arg capture to avoid closure over loop var
+            # VaR losses (Pinball): use default-arg capture to avoid closure over loop var
             losses[f"var_h{horizon}"] = pinball_loss  # tau defaults to 0.01 (99% VaR)
             loss_weights[f"var_h{horizon}"] = 0.3 / horizon
             metrics[f"var_h{horizon}"] = ["mae"]

@@ -1,0 +1,16 @@
+======================================================================
+INTERPRETABILITY ANALYSIS SUMMARY
+======================================================================
+
+Top 5 Most Important Features:
+
+  1. vix: 0.0010
+  2. high_low_spread: 0.0010
+  3. realized_volatility: 0.0009
+  4. rv_lag1: 0.0006
+  5. returns: 0.0006
+
+
+Key Finding:
+  vix is the dominant driver with mean |SHAP| = 0.0010
+  This highlights the role of implied-volatility (market fear) signals.

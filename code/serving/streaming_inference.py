@@ -327,7 +327,7 @@ class StreamingInferencePipeline:
         # Inference
         predictions = self.model.predict(sequence, verbose=0)
 
-        # Extract predictions — named-output models return a dict
+        # Extract predictions: named-output models return a dict
         if isinstance(predictions, dict):
             volatility_pred = float(predictions["volatility"][0][0])
             var_pred = float(predictions["var"][0][0])

@@ -7,11 +7,29 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import Model, layers
 
+# Version-agnostic access to register_keras_serializable:
+# - TF 2.14 / Keras 2: tf.keras.saving.register_keras_serializable
+# - TF 2.16+ / Keras 3: keras.saving.register_keras_serializable
+#   (the tf.keras lazy proxy no longer exposes .saving)
+if hasattr(keras, "saving") and hasattr(keras.saving, "register_keras_serializable"):
+    register_keras_serializable = keras.saving.register_keras_serializable
+elif hasattr(keras, "utils") and hasattr(keras.utils, "register_keras_serializable"):
+    register_keras_serializable = keras.utils.register_keras_serializable
+else:  # very old fallback: no-op decorator
+
+    def register_keras_serializable(package="Custom", name=None):
+        def _decorator(obj):
+            return obj
+
+        return _decorator
+
+
 # Set random seeds for reproducibility
 tf.random.set_seed(456)
 np.random.seed(123)
 
 
+@register_keras_serializable(package="VolatilityForecasting")
 class AttentionLayer(layers.Layer):
     """
     Bahdanau-style Attention mechanism for sequence models.
@@ -175,7 +193,7 @@ def build_lstm_attention_model(
     return model
 
 
-@tf.keras.saving.register_keras_serializable(package="VolatilityForecasting")
+@register_keras_serializable(package="VolatilityForecasting")
 def pinball_loss(y_true, y_pred, tau=0.01):
     """
     Pinball loss (quantile loss) for VaR prediction.
@@ -221,7 +239,7 @@ def compile_model(model, learning_rate=1e-3):
         learning_rate=learning_rate, beta_1=0.9, beta_2=0.999
     )
 
-    # Define losses — pinball_loss is @register_keras_serializable so it
+    # Define losses: pinball_loss is @register_keras_serializable so it
     # round-trips correctly through .keras save/load without custom_objects.
     losses = {
         "volatility": "mse",

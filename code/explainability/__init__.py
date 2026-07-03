@@ -1,25 +1,34 @@
 """
 Explainability package: SHAP values and attention weight analysis.
+
+Re-exports are LAZY (PEP 562) so that importing unrelated packages never
+pulls in this module's plotting dependencies.
 """
 
-from .explain import (
-    aggregate_shap_across_time,
-    compute_shap_values,
-    create_interpretability_report,
-    plot_attention_heatmap,
-    plot_shap_bar,
-    plot_shap_summary,
-    prepare_shap_background,
-    run_full_explainability_pipeline,
-)
+_EXPORTS = {
+    "prepare_shap_background": "explain",
+    "compute_shap_values": "explain",
+    "aggregate_shap_across_time": "explain",
+    "plot_shap_summary": "explain",
+    "plot_shap_bar": "explain",
+    "plot_attention_heatmap": "explain",
+    "create_interpretability_report": "explain",
+    "run_full_explainability_pipeline": "explain",
+}
 
-__all__ = [
-    "prepare_shap_background",
-    "compute_shap_values",
-    "aggregate_shap_across_time",
-    "plot_shap_summary",
-    "plot_shap_bar",
-    "plot_attention_heatmap",
-    "create_interpretability_report",
-    "run_full_explainability_pipeline",
-]
+__all__ = sorted(_EXPORTS)
+
+
+def __getattr__(name):
+    if name in _EXPORTS:
+        import importlib
+
+        module = importlib.import_module(f".{_EXPORTS[name]}", __name__)
+        value = getattr(module, name)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(set(globals()) | set(__all__))

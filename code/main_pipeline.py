@@ -11,6 +11,7 @@ import tensorflow as tf
 np.random.seed(123)
 tf.random.set_seed(456)
 
+from core import console as ui
 from core.model import get_attention_weights
 from core.utils import load_and_prepare_data, train_val_test_split
 
@@ -30,15 +31,16 @@ from training.train import plot_training_history, train_model
 def main():
     """Execute complete pipeline."""
 
-    print("\n" + "=" * 70)
-    print("LSTM-ATTENTION-SHAP COMPLETE PIPELINE")
-    print("=" * 70)
+    ui.banner(
+        "LSTM-Attention-SHAP Pipeline",
+        "Explainable Deep Learning for Financial Volatility Forecasting",
+        {"stages": "data, training, evaluation, explainability, summary"},
+    )
 
     # ==================================================================
     # STEP 1: DATA PREPARATION
     # ==================================================================
-    print("\n[STEP 1/5] DATA PREPARATION")
-    print("-" * 70)
+    ui.section("1/5", "DATA PREPARATION")
 
     data_path = "./data/synthetic_data.csv"
 
@@ -63,8 +65,7 @@ def main():
     # ==================================================================
     # STEP 2: MODEL TRAINING
     # ==================================================================
-    print("\n[STEP 2/5] MODEL TRAINING")
-    print("-" * 70)
+    ui.section("2/5", "MODEL TRAINING")
 
     model_path = "../models/lstm_attention_model.keras"
 
@@ -90,8 +91,7 @@ def main():
     # ==================================================================
     # STEP 3: MODEL EVALUATION
     # ==================================================================
-    print("\n[STEP 3/5] MODEL EVALUATION")
-    print("-" * 70)
+    ui.section("3/5", "MODEL EVALUATION")
 
     # Volatility forecasting evaluation
     results, predictions_dict = evaluate_volatility_forecast(
@@ -113,8 +113,7 @@ def main():
     # ==================================================================
     # STEP 4: EXPLAINABILITY ANALYSIS
     # ==================================================================
-    print("\n[STEP 4/5] EXPLAINABILITY ANALYSIS")
-    print("-" * 70)
+    ui.section("4/5", "EXPLAINABILITY ANALYSIS")
 
     # Extract attention weights
     print("Extracting attention weights...")
@@ -132,25 +131,30 @@ def main():
     # ==================================================================
     # STEP 5: SUMMARY
     # ==================================================================
-    print("\n[STEP 5/5] PIPELINE SUMMARY")
-    print("-" * 70)
+    ui.section("5/5", "PIPELINE SUMMARY")
 
-    print("\n✓ Data prepared and split chronologically")
-    print(f"✓ Model trained (RMSE: {results['RMSE']:.4f})")
-    print(
-        f"✓ VaR backtesting completed (Violation rate: {var_results['violation_rate']*100:.2f}%)"
+    ui.step_done("data prepared and split chronologically")
+    ui.step_done(f"model trained (RMSE: {results['RMSE']:.4f})")
+    ui.step_done(
+        f"VaR backtest complete (violation rate: "
+        f"{var_results['violation_rate'] * 100:.2f}%)"
     )
-    print("✓ SHAP analysis completed")
-    print(f"✓ Top driver: {explain_results['importance_df'].iloc[0]['Feature']}")
+    ui.step_done("SHAP analysis complete")
+    ui.step_done(
+        f"top SHAP driver: " f"{explain_results['importance_df'].iloc[0]['Feature']}"
+    )
 
-    print("\n" + "=" * 70)
-    print("PIPELINE COMPLETED SUCCESSFULLY!")
-    print("=" * 70)
-    print("\nGenerated outputs:")
-    print("  Models: ../models/lstm_attention_model.keras")
-    print("  Figures: ../docs/figures/*.png")
-    print("  Tables: ../docs/tables/*.csv")
-    print("  Reports: ../docs/tables/*.txt")
+    ui.summary_panel(
+        "PIPELINE COMPLETE",
+        {
+            "Test RMSE": f"{results['RMSE']:.4f}",
+            "VaR violation rate": f"{var_results['violation_rate'] * 100:.2f}%",
+            "Top SHAP driver": explain_results["importance_df"].iloc[0]["Feature"],
+            "Model": "../models/lstm_attention_model.keras",
+            "Figures": "../docs/figures/*.png",
+            "Tables": "../docs/tables/*.csv",
+        },
+    )
 
     return {
         "model": model,

@@ -7,9 +7,22 @@ import warnings
 
 import numpy as np
 import pandas as pd
-import yfinance as yf
+
+try:
+    import yfinance as yf
+except Exception:  # yfinance is optional: only needed for live downloads
+    yf = None
 
 warnings.filterwarnings("ignore")
+
+
+def _require_yfinance():
+    """Raise a clear error if yfinance is not installed."""
+    if yf is None:
+        raise ImportError(
+            "yfinance is required for live data download. "
+            "Install it with: pip install yfinance"
+        )
 
 
 def download_price_data(tickers, start_date="2018-01-01", end_date="2024-12-31"):
@@ -30,6 +43,7 @@ def download_price_data(tickers, start_date="2018-01-01", end_date="2024-12-31")
     data_dict : dict
         Dictionary containing dataframes for each ticker
     """
+    _require_yfinance()
     print(f"\n{'='*70}")
     print("DOWNLOADING REAL MARKET DATA")
     print(f"{'='*70}")
@@ -120,6 +134,7 @@ def download_vix_data(start_date="2018-01-01", end_date="2024-12-31"):
     vix_df : pd.DataFrame
         VIX data
     """
+    _require_yfinance()
     print("\nDownloading VIX data...")
     try:
         vix = yf.download("^VIX", start=start_date, end=end_date, progress=False)
@@ -203,6 +218,7 @@ def build_complete_dataset(
     df : pd.DataFrame
         Complete dataset with all features
     """
+    _require_yfinance()
     print(f"\n{'='*70}")
     print(f"BUILDING COMPLETE DATASET FOR {ticker}")
     print(f"{'='*70}")

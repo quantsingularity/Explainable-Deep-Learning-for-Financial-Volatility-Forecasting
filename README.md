@@ -71,7 +71,8 @@ multi-horizon forecasting across equities, commodities, and currencies.
 │   ├── tests/                        # Test suite
 │   │   ├── __init__.py
 │   │   ├── test_smoke.py             # Core functionality smoke tests
-│   │   └── test_integration.py       # End-to-end integration tests
+│   │   ├── test_integration.py       # End-to-end integration tests
+│   │   └── test_fixes_regression.py  # Regression tests for review fixes
 │   ├── main_pipeline.py              # Orchestration entry point
 │   └── requirements.txt              # All dependencies
 ├── docs/
@@ -79,6 +80,7 @@ multi-horizon forecasting across equities, commodities, and currencies.
 │   ├── figures/                      # Pre-generated paper figures (PNG)
 │   └── tables/                       # Pre-generated result tables (CSV)
 ├── scripts/
+│   ├── run.sh                        # Unified entry point (test/train/demo/...)
 │   ├── run_all.sh                    # One-command full pipeline execution
 │   ├── setup.sh                      # Production environment setup
 │   └── lint.sh                       # Ruff / flake8 / mypy / pylint runner
@@ -127,6 +129,18 @@ cd Explainable-Deep-Learning-for-Financial-Volatility-Forecasting
 
 python3 -m venv venv && source venv/bin/activate
 pip install -r code/requirements.txt
+```
+
+### Run script (simplest)
+
+```bash
+pip install -r code/requirements.txt   # install dependencies
+bash scripts/run.sh test       # run the test suite (29 tests)
+bash scripts/run.sh demo       # 2-epoch smoke run + SHAP (~3 min, CPU)
+bash scripts/run.sh train      # full pipeline: train, evaluate, VaR, SHAP
+bash scripts/run.sh baselines  # GARCH / EGARCH / HAR-RV comparison
+bash scripts/run.sh backtest   # volatility trading strategy backtests
+bash scripts/run.sh api        # FastAPI inference server
 ```
 
 ### Automated Research Pipeline

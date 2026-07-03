@@ -277,7 +277,7 @@ async def predict_volatility(request: VolatilityRequest):
 
         MODEL_INFERENCE_LATENCY.observe(inference_time / 1000)
 
-        # Extract predictions — named-output models return a dict
+        # Extract predictions: named-output models return a dict
         if isinstance(predictions, dict):
             volatility_pred = float(predictions["volatility"][0][0])
             var_pred = float(predictions["var"][0][0]) if request.return_var else None
